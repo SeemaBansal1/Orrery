@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#02030A">
+<title>Orrery — Explore the Solar System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600&family=Unbounded:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+/*__CSS__*/
+</style>
+</head>
+<body class="is-landing view-realistic">
+<canvas id="scene" aria-label="Interactive 3D model of the Solar System. Drag to rotate, scroll to zoom, click a planet to open its guide."></canvas>
+<div class="fx-vignette" aria-hidden="true"></div>
+<div class="fx-grain" aria-hidden="true"></div>
+<div id="labels" aria-hidden="true"></div>
+<div id="tip" class="tip glass" aria-hidden="true"></div>
+
+<header class="top ui" id="top">
+  <button class="brand" id="brand" aria-label="Orrery, return to the Solar System">
+    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <circle cx="16" cy="16" r="3.2" fill="#FFC477"/>
+      <ellipse cx="16" cy="16" rx="13" ry="5.2" stroke="rgba(233,237,245,.55)" stroke-width="1" transform="rotate(-24 16 16)"/>
+      <ellipse cx="16" cy="16" rx="8" ry="3.2" stroke="rgba(233,237,245,.35)" stroke-width="1" transform="rotate(-24 16 16)"/>
+      <circle cx="27.3" cy="11" r="1.7" fill="#9BD8FF"/>
+    </svg>
+    <span class="brand-text"><span class="brand-name">ORRERY</span><span class="brand-sub">A Solar System atlas</span></span>
+  </button>
+  <nav class="nav glass" id="nav" aria-label="Primary">
+    <button data-nav="system" class="on">SOLAR SYSTEM</button>
+    <button data-nav="planets">PLANETS</button>
+    <button data-nav="compare">COMPARE</button>
+    <button data-nav="missions">MISSIONS</button>
+    <button data-nav="about">ABOUT</button>
+    <span class="nav-ink" aria-hidden="true"></span>
+  </nav>
+  <div class="tools" id="tools">
+    <div class="search glass" id="search">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
+      <input id="q" type="search" placeholder="Search planets, moons, missions" autocomplete="off" aria-label="Search planets, moons and missions">
+      <kbd>/</kbd>
+      <div class="results glass" id="results" role="listbox"></div>
+    </div>
+    <div class="views glass" id="views" role="tablist" aria-label="View mode">
+      <button role="tab" data-view="realistic" class="on" aria-selected="true">Realistic</button>
+      <button role="tab" data-view="data" aria-selected="false">Data</button>
+      <button role="tab" data-view="compare" aria-selected="false">Comparison</button>
+      <span class="views-ink" aria-hidden="true"></span>
+    </div>
+  </div>
+</header>
+
+<section class="landing" id="landing" aria-labelledby="heroTitle">
+  <div class="landing-inner">
+    <h1 class="hero" id="heroTitle"><span><i>EXPLORE</i></span><span><i>THE SOLAR</i></span><span><i>SYSTEM</i></span></h1>
+    <p class="hero-sub">A 3D interactive guide to the worlds beyond Earth.</p>
+    <div class="hero-actions">
+      <button class="btn-start" id="start" disabled><span>START EXPLORING</span></button>
+      <button class="btn-ghost" id="startTour" disabled>Take the guided tour</button>
+    </div>
+    <div class="boot" id="boot"><div class="boot-bar"><i id="bootFill"></i></div><span id="bootText">Loading the Solar System</span></div>
+  </div>
+</section>
+<div class="scroll-hint" aria-hidden="true"><span>Scroll to begin</span><i></i></div>
+
+<button class="back glass" id="back"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg><span>Back to Solar System</span></button>
+
+<aside class="panel glass" id="panel" aria-label="Planet guide" aria-hidden="true">
+  <div class="panel-glow" aria-hidden="true"></div>
+  <button class="panel-handle" id="panelHandle" aria-label="Expand guide"></button>
+  <div class="panel-scroll" id="panelBody"></div>
+</aside>
+
+<aside class="drawer glass" id="drawer" aria-hidden="true">
+  <div class="d-head"><div><h2 id="drawerTitle"></h2><p id="drawerSub"></p></div>
+    <button class="p-close" id="drawerClose" aria-label="Close"><svg viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.5"><path d="m2 2 10 10M12 2 2 12"/></svg></button></div>
+  <div class="d-body" id="drawerBody"></div>
+</aside>
+
+<section class="hud" id="hud" aria-label="Planet exploration controls"></section>
+
+<div class="legend glass" id="legend" aria-hidden="true">
+  <b>Data view</b>
+  <div class="lg"><i style="background:linear-gradient(90deg,#9BD8FF,#ffb45e)"></i>Gravity well, deeper toward massive bodies</div>
+  <div class="lg"><i style="background:rgba(155,216,255,.7)"></i>Orbit with distance from the Sun in AU</div>
+  <div class="lg"><i style="background:rgba(255,255,255,.6)"></i>Trail shows direction of travel</div>
+  <p style="margin:10px 0 0;color:var(--mute)">Distances and sizes are compressed so all eight planets fit on screen.</p>
+</div>
+
+<div class="float-card glass" id="tour" role="region" aria-label="Guided tour" aria-live="polite"></div>
+<div class="float-card glass" id="journey" role="region" aria-label="Scroll journey" aria-live="polite"></div>
+
+<div class="dock ui" id="dock">
+  <footer class="rail glass" id="rail">
+    <div class="time" id="time" role="group" aria-label="Simulation speed">
+      <button data-speed="0" aria-label="Pause orbits"><svg viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="1.5" width="2.6" height="9" rx=".8"/><rect x="7.4" y="1.5" width="2.6" height="9" rx=".8"/></svg></button>
+      <button data-speed="1" class="on">1×</button>
+      <button data-speed="10">10×</button>
+      <button data-speed="50">50×</button>
+    </div>
+    <div class="tl" id="timeline" aria-label="Planets in order from the Sun"></div>
+    <div class="rail-actions">
+      <button class="chip" id="journeyBtn" aria-pressed="false" title="Scroll to travel from the Sun to Neptune"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="1.5" width="6" height="11" rx="3"/><path d="M8 4v2.5M8 14.5v0"/></svg><span>Scroll journey</span></button>
+      <button class="chip" id="tourBtn"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.5 2.8v10.4L13 8z"/></svg><span>Guided tour</span></button>
+    </div>
+  </footer>
+</div>
+
+<div class="toast glass" id="toast" role="status"></div>
+<div class="nogl" id="nogl"><div><h2>3D view unavailable</h2><p>This atlas needs WebGL. Turn on hardware acceleration in your browser settings, or open the page in a current version of Chrome, Edge, Firefox or Safari.</p></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script>
+/*__JS__*/
+</script>
+</body>
+</html>
